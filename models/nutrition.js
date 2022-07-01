@@ -3,7 +3,7 @@ const db = require("../db")
 
 class Nutrition {
     static async createNutrition({info, user}){
-        const requiredFields = ["name", "category", "calories", "imageUrl"]
+        const requiredFields = ["name", "category", "calories", "imageUrl", "quantity"]
         requiredFields.forEach(field => {
             if (!info.hasOwnProperty(field)){
                 throw new BadRequestError(`Missing ${field} in request body.`)
@@ -15,11 +15,12 @@ class Nutrition {
             category,
             calories,
             image_url,
-            user_id
+            user_id,
+            quantity
         )
-        VALUES ($1, $2, $3, $4, (SELECT id FROM users WHERE email = $5))
-        RETURNING id, name, category, calories, created_at, image_url AS "imageUrl", user_id AS "userId";
-        `, [info.name, info.category, info.calories, info.imageUrl, user.email])
+        VALUES ($1, $2, $3, $4, (SELECT id FROM users WHERE email = $5), $6)
+        RETURNING id, name, category, calories, created_at, image_url AS "imageUrl", user_id AS "userId", quantity;
+        `, [info.name, info.category, info.calories, info.imageUrl, user.email, info.quantity])
 
         const nutrition = result.rows[0]
 
@@ -36,7 +37,8 @@ class Nutrition {
         n.calories,
         n.image_url AS "imageUrl",
         n.user_id AS "userId",
-        n.created_at AS "createdAt",
+        to_char(n.created_at, 'DD/MM/YYYY') AS "createdAt",
+        n.quantity,
         u.email AS "userEmail"
         
         FROM nutrition AS n
@@ -62,7 +64,8 @@ class Nutrition {
         n.calories,
         n.image_url AS "imageUrl",
         n.user_id AS "userId",
-        n.created_at AS "createdAt",
+        to_char(n.created_at, 'DD/MM/YYYY') AS "createdAt",
+        n.quantity,
         u.email AS "userEmail"
         
         FROM nutrition AS n
